@@ -5,13 +5,14 @@
 package frc.robot;
 
 import com.ctre.phoenix6.HootAutoReplay;
+import com.pathplanner.lib.commands.FollowPathCommand;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class Robot extends TimedRobot {
-    private Command m_autonomousCommand;
+    private Command auton;
 
     private final RobotContainer m_robotContainer;
 
@@ -22,6 +23,10 @@ public class Robot extends TimedRobot {
 
     public Robot() {
         m_robotContainer = new RobotContainer();
+
+        FollowPathCommand.warmupCommand().schedule();
+        // Eager-load the auton command so it's ready right away
+        m_robotContainer.getAutonomousCommand();
     }
 
     @Override
@@ -41,10 +46,13 @@ public class Robot extends TimedRobot {
 
     @Override
     public void autonomousInit() {
-        m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+        auton = m_robotContainer.getAutonomousCommand();
 
-        if (m_autonomousCommand != null) {
-            CommandScheduler.getInstance().schedule(m_autonomousCommand);
+        if (auton != null) {
+            CommandScheduler.getInstance().schedule(auton);
+        } 
+        else{
+            System.out.println("No paths specified!!!");
         }
     }
 
@@ -56,8 +64,8 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopInit() {
-        if (m_autonomousCommand != null) {
-            CommandScheduler.getInstance().cancel(m_autonomousCommand);
+        if (auton != null) {
+            CommandScheduler.getInstance().cancel(auton);
         }
     }
 

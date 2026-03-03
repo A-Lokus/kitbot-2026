@@ -8,14 +8,17 @@ import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import static frc.robot.Constants.OperatorConstants.*;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.Eject;
 import frc.robot.commands.Intake;
@@ -40,6 +43,9 @@ public class RobotContainer {
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
+    private final SendableChooser<Command> autoChooser;
+    private Command auton = null;
+
     private final CommandXboxController joystick = new CommandXboxController(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
@@ -49,6 +55,12 @@ public class RobotContainer {
 
     public RobotContainer() {
         configureBindings();
+
+        this.autoChooser = AutoBuilder.buildAutoChooser(); // Default auto will be Commands.none()
+        this.autoChooser.onChange((Command autoCommand) -> this.auton = autoCommand); // Reloads the stored auto
+
+        SmartDashboard.putData("Auto Chooser", this.autoChooser);
+        SmartDashboard.putData("CommandScheduler", CommandScheduler.getInstance());
     }
 
     private void configureBindings() {
@@ -95,26 +107,18 @@ public class RobotContainer {
         // While the A button is held on the operator controller, eject fuel back out
         // the intake
         operatorController.a().whileTrue(new Eject(fuelSubsystem));
-
+ 
         fuelSubsystem.setDefaultCommand(fuelSubsystem.run(() -> fuelSubsystem.stop()));
     }
 
+    /**
+     * Use this to pass the autonomous command to the main {@link Robot} class.
+     * @return The command to run in autonomous.
+     */
     public Command getAutonomousCommand() {
-        // Simple drive forward auton
-        final var idle = new SwerveRequest.Idle();
-        return Commands.sequence(
-            // Reset our field centric heading to match the robot
-            // facing away from our alliance station wall (0 deg).
-            drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
-            // Then slowly drive forward (away from us) for 5 seconds.
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(0.5)
-                    .withVelocityY(0)
-                    .withRotationalRate(0)
-            )
-            .withTimeout(5.0),
-            // Finally idle for the rest of auton
-            drivetrain.applyRequest(() -> idle)
-        );
+        if (this.auton == null) {
+            this.auton = this.autoChooser.getSelected();
+        }
+        return this.auton;
     }
 }
