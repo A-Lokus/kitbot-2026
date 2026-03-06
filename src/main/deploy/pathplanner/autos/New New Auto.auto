@@ -9,6 +9,12 @@
           "data": {
             "pathName": "Copy of 1mforward"
           }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "1mforward"
+          }
         }
       ]
     }

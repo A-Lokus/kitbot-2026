@@ -7,6 +7,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.fasterxml.jackson.databind.util.Named;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 
@@ -16,6 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import com.pathplanner.lib.auto.NamedCommands;
 import static frc.robot.Constants.OperatorConstants.*;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -55,6 +57,13 @@ public class RobotContainer {
       OPERATOR_CONTROLLER_PORT);
 
     public RobotContainer() {
+        CANFuelSubsystem exampleCanFuelSubsystem = new CANFuelSubsystem();
+
+        // Enables robot commands to be used in PathPlanner.
+        NamedCommands.registerCommand("eject", new Eject(exampleCanFuelSubsystem));
+        NamedCommands.registerCommand("intake", new Intake(exampleCanFuelSubsystem));
+        NamedCommands.registerCommand("launch", new LaunchSequence(exampleCanFuelSubsystem));
+
         configureBindings();
 
         this.autoChooser = AutoBuilder.buildAutoChooser(); // Default auto will be Commands.none()
@@ -64,7 +73,7 @@ public class RobotContainer {
         SmartDashboard.putData("CommandScheduler", CommandScheduler.getInstance());
     }
 
-    private void configureBindings() {
+    private void configureBindings(){
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
